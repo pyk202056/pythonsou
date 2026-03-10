@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>AJAX 중급 예제 (직원 관리)</title>
+<style>
+    table {
+        border-collapse: collapse;
+        margin-top: 15px;
+        width: 500px;
+    }
+
+    th, td {
+        border: 1px solid #333;
+        text-align: center;
+    }
+
+    th { background: #eee; }
+    .error { color: red; margin-top: 10px; }
+</style>
+</head>
+<body>
+<h3>직원 검색 (AJAX로 검색)</h3>
+<input type="text" id="deptKeyword" placeholder="부서명 입력">
+<button id="btnSearch">검색</button>
+
+<div id="loading"></div>
+<div id="message"></div>
+<div id="result"></div>
+
+<script>
+document.getElementById("btnSearch").addEventListener("click", loadEmployees);
+
+async function loadEmployees() {
+    const keyword = document.getElementById("deptKeyword").value.trim();
+    const loading = document.getElementById("loading");
+    const message = document.getElementById("message");
+    const resultDiv = document.getElementById("result");
+
+    loading.innerHTML = "데이터 로딩 중...";
+    message.innerHTML = "";
+    resultDiv.innerHTML = "";
+
+    try {
+        const response = await fetch("myjikwon.json");
+        if (!response.ok) {
+            throw new Error("서버 오류 발생");
+        }
+
+        const json = await response.json();
+        if (json.status !== "success") {
+            throw new Error("서버 응답 오류");
+        }
+
+        const employees = json.data;
+
+        // 부서 필터링
+        const filtered = employees.filter(emp =>
+            emp.dept.includes(keyword)
+        );
+
+        if (filtered.length === 0) {
+            loading.innerHTML = "";
+            message.innerHTML = "검색 결과가 없습니다.";
+            return;
+        }
+
+        renderTableFunc(filtered);
+
+        // 평균 급여 계산 : reduce()는 배열을 하나의 값으로 줄이는 함수
+        // filtered 배열에 있는 모든 직원의 급여를 더해서 인원 수로 나눔
+        const avgSalary =
+            filtered.reduce((sum, emp) => 
+                sum + emp.salary, 0) / filtered.length;
+
+        message.innerHTML =
+            "검색 인원: " + filtered.length +
+            " / 평균 급여: " + avgSalary.toFixed(2);
+
+        loading.innerHTML = "";
+    } catch (error) {
+        loading.innerHTML = "";
+        message.innerHTML = "<span class='error'>" + error.message + "</span>";
+    }
+}
+
+function renderTableFunc(data) {
+    let table = "<table>";
+    table += "<tr><th>ID</th><th>이름</th><th>부서</th><th>급여</th></tr>";
+    data.forEach(emp => {
+        table += "<tr>";
+        table += "<td>" + emp.id + "</td>";
+        table += "<td>" + emp.name + "</td>";
+        table += "<td>" + emp.dept + "</td>";
+        table += "<td>" + emp.salary + "</td>";
+        table += "</tr>";
+    });
+    table += "</table>";
+
+    document.getElementById("result").innerHTML = table;
+}
+</script>
+</body>
+</html>

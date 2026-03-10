@@ -1,61 +1,37 @@
-from datetime import datetime
+import MySQLdb                 # MySQL / MariaDB 연결 라이브러리
+import json                    # Python 객체 → JSON 문자열 변환용 모듈
 
-# 입력 함수
-def inputfunc():
-    # [사번, 이름, 기본급, 입사년도]
-    datas = [
-        [1, "강나루", 1500000, 2010],
-        [2, "이바다", 2200000, 2018],
-        [3, "박하늘", 3200000, 2005],
-        [4, "최구름", 1800000, 2022],
-    ]
-    return datas
+conn = MySQLdb.connect(
+    host="localhost",
+    user="root",
+    passwd="123",
+    db="test",
+    charset="utf8"
+)
 
+try:
+    cur = conn.cursor() # 기본 커서 (결과가 tuple 형태로 반환됨)
+    cur.execute("SELECT * FROM sangdata")
 
-# 처리 함수
-def processfunc(datas):
-    current_year = datetime.now().year
-    count = 0
+    # 컬럼명 가져오기
+    columns = [col[0] for col in cur.description]
+    # cur.description → 컬럼 정보
+    # col[0] → 컬럼 이름만 추출
 
-    print("사번  이름    기본급    근무년수  근속수당  공제액    수령액")
-    print("-" * 60)
+    rows = cur.fetchall()
 
-    for emp in datas:
-        sabun, name, base_pay, hire_year = emp
+    # tuple → dict 변환
+    result = []
+    for row in rows:
+        row_dict = dict(zip(columns, row))  # 컬럼명과 값 묶기
+        result.append(row_dict)
 
-        # 근무년수
-        work_years = current_year - hire_year
+    # JSON 변환
+    json_data = json.dumps(result, ensure_ascii=False, indent=2)
+    # ensure_ascii=False → 한글 깨짐 방지
+    # indent=2 → 보기 좋게 들여쓰기
 
-        # 근속수당
-        if work_years <= 3:
-            bonus = 150000
-        elif work_years <= 8:
-            bonus = 450000
-        else:
-            bonus = 1000000
-
-        # 급여액
-        salary = base_pay + bonus
-
-        # 공제세율
-        if salary >= 3000000:
-            tax_rate = 0.5
-        elif salary >= 2000000:
-            tax_rate = 0.3
-        else:
-            tax_rate = 0.15
-
-        # 공제액, 수령액
-        tax = int(salary * tax_rate)
-        receive = salary - tax
-
-        print(f"{sabun:<4} {name:<6} {base_pay:<9} {work_years:<8} {bonus:<9} {tax:<8} {receive}")
-
-        count += 1
-
-    print("\n처리 건수 :", count, "건")
-
-
-# 메인 실행부
-datas = inputfunc()
-processfunc(datas)
+    print(json_data)
+finally:
+    cur.close()
+    conn.close()
