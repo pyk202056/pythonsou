@@ -30,7 +30,7 @@ def sangdata():
         user="root",
         password="123",
         database="test",
-        charset="utf8"  
+        charset="utf8"
     )
     
     cur = conn.cursor()
