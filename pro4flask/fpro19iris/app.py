@@ -35,7 +35,15 @@ def showdata():
     plt.savefig(img_path, dpi=130)
     plt.close()
 
-    return render_template('show.html')
+    irishtml = df.to_html(
+        classes='table table-striped table-sm', index=False
+    )
+
+    return render_template(
+        'show.html',
+        table=irishtml,
+        img_path='images/fpro19.png'
+    )
 
 
 if __name__ == '__main__':
